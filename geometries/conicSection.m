@@ -5,7 +5,7 @@ function [boreData holeData] = conicSection( ~ )
 
 % Air column radii measurements
 boreData = [1e-3*[0     500];    % positions (from input end)
-            1e-3*[10     15]/2]; % radii at corresponding points
+            1e-3*[10     34]/2]; % radii at corresponding points
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tonehole specifications
@@ -20,4 +20,4 @@ boreData = [1e-3*[0     500];    % positions (from input end)
 %           Row 7 - tonehole pad heights (above hole)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-holeData = zeros(5, 0);
+holeData = zeros(6, 0);

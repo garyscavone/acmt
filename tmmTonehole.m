@@ -156,17 +156,17 @@ if state % open hole
   tr = atan(-1j*ZroZc)./k;
 
   % Shunt impedance
-  Zs = 1j * Zc .* (k.*ti + tan( k.*(height+tm+tr) ));
+  Zs = 1j * Zc * (k.*ti + tan( k.*(height+tm+tr) ));
 
 else % closed hole
 
   % Shunt impedance
-  Zs = 1j * Zc .* (k.*ti - cot( k * (height + tm) ));
+  Zs = 1j * Zc * (k.*ti - cot( k * (height + tm) ));
 
 end
 
 % Series impedance
-Za = 1j * Zc .* delta^2 * k * ta;
+Za = 1j * Zc * delta^2 * k * ta;
 
 ZaoZs = Za ./ Zs;
 W = 1 + 0.5 * ZaoZs;

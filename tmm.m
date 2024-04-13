@@ -106,4 +106,8 @@ for n = length(L):-1:1
   end
 end
 
+if ra(1) ~= ra(2) % recalculate Zc for input conic section
+  [c, rho] = thermoConstants( T );
+  Zc = rho * c / ( pi * ra(1) * ra(1) );
+end
 Zin = Zl ./ Zc;
