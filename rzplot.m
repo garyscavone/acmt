@@ -1,8 +1,8 @@
-function rzplot( f, Zin, plotTypes, doGrid, doHold, xlimits, pcolor, doSmooth )
+function rzplot( f, Zin, plotTypes, doGrid, doHold, xlimits, pcolor, doSmooth, Z0, Zcone )
 % RZPLOT: Plot impedance and reflectance (and time-domain correlates).
 %
 % RZPLOT( f, Zin, plotTypes, doGrid, doHold, xlimit, pcolor, c, doSmooth ) where:
-%   - f: 1D vector of frequencies;
+%   - f: 1D vector of frequencies (assumed to be uniformly spaced from 0 to fs/2);
 %   - Zin: 1D vector of impedance data;
 %   - plotTypes: 1 or more values (in vector) of the following plot types:
 %     - 1:  Impedance Magnitude in dB
@@ -22,9 +22,9 @@ function rzplot( f, Zin, plotTypes, doGrid, doHold, xlimits, pcolor, doSmooth )
 %   - pcolor: optional color for plot data;
 %   - doSmooth: optional boolian flag to specify smoothing of time data.
 %
-% by Gary P. Scavone, McGill University, 2013-2021.
+% by Gary P. Scavone, McGill University, 2013-2024.
 
-if size( Zin) ~= size( f )
+if size( Zin ) ~= size( f )
   error( 'Zin and f must be the same size.' );
 end
 
@@ -33,7 +33,17 @@ if ~isvector( Zin )
 end
 
 if ( sum(plotTypes > 5) )
-  R = (Zin - 1) ./ (Zin + 1);
+  if exist( 'Zcone', 'var' ) % input is conical
+    if size( Zcone ) ~= size( Zin )
+      error( 'Zin and Zcone must be the same size.' );
+    end
+    if ~exist( 'Z0', 'var' )
+      error( 'The argument Z0 is required with Zcone.' );
+    end
+    R = ( Zin*Z0 - Zcone ) ./ ( Z0*Zin.*Zcone./conj(Zcone) + Zcone );
+  else
+    R = (Zin - 1) ./ (Zin + 1);
+  end
 end
 
 if ~exist( 'doHold', 'var' )
@@ -90,22 +100,18 @@ for n = 1:nPlots
     hx = xlabel('Frequency (Hz)');
   else
     if plotTypes(n) == 10
-      H = transpose(Zin);
+      H = Zin;
       ytext = 'Impulse Response';
     elseif plotTypes(n) == 11
-      H = transpose(R);
+      H = R;
       ytext = 'Reflection Function';
     end
-    H(1) = real(H(1));
+    H(1) = real(H(1));        % force real value at z = 1
+    H(end) = real( H(end) );  % force real value at z = -1
     if ~isrow( H ), H = H.'; end
-    if rem(length(H), 2) % odd length
-      H(end) = real(H(end));
-      H = [ H, conj( flip( H(2:end-1) ) ) ]; % make conjugate symmetric
-    else % even length
-      H = [ H, conj( flip( H(2:end) ) ) ];   % make conjugate symmetric
-    end
-    h = ifft( H );
-    t = (0:length(h)-1) * 500 / max(f);      % time in milliseconds
+    H = [ H, conj( H(end-1:-1:2) ) ];   % make conjugate symmetric
+    h = real( ifft( H ) );
+    t = (0:length(h)-1) * 500 / max(f); % time in milliseconds
     if doSmooth
       h = filtfilt([0.5 0.5], 1, h);
     end

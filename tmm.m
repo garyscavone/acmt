@@ -72,6 +72,10 @@ if n > 6, padr = holeData(7,:); end % tonehole pad radii
 if n > 7, padt = holeData(8,:); end % tonehole pad heights
 if n > 8, holew = holeData(9,:); end % tonehole wall thickness
 
+if f(1) == 0 % avoid zero frequency calculations
+  f(1) = eps;
+end
+
 % Work our way back from the load impedance at the end.
 switch endType
   case 1

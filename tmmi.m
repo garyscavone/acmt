@@ -94,6 +94,10 @@ if endType
   nOpen = nOth + 1;
 end
 
+if f(1) == 0 % avoid zero frequency calculations
+  f(1) = eps;
+end
+
 if nOpen < 2  % Do TMM
   Zin = tmm( boreData, holeData, endType, f, lossType, T );
   return

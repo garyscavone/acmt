@@ -1,15 +1,46 @@
 classdef dwg  < handle  
-  % DWG: A Matlab class to create a digital waveguide structure that can be
-  %      used to process arbitrarily-sized input signals. Internal state is
-  %      preserved between calls to processInput(), allowing input signals
-  %      to be specified iteratively (including one sample at a time).
-  %      Internal state can be cleared using the reset() function.
+  % DWG: This file implements a Matlab class to create digital waveguide
+  %      models of acoustic air columns. The modeling is based on pressure
+  %      traveling-wave propagation and scatttering.
+  % 
+  %      Inputs to the model, passed using the processInput() function, are
+  %      always assumed to be traveling-wave pressure values in the
+  %      positive-going direction (toward the output end of the air column)
+  %      and are applied at the air column input end. The processInput()
+  %      function can take an arbitrary number of input values. Internal
+  %      state is preserved between calls, allowing input signals to be
+  %      specified iteratively (including one sample at a time). Internal
+  %      state can be cleared using the reset() function.
   %
   %      If using this class to implement an air column model with an
   %      attached excitation mechanism in a single-step iterative scheme,
-  %      the getNextPminus() function can be used to return the next output
-  %      from the DWG structure. This should then be followed by a call to
-  %      processInput() with a new single input value.
+  %      the getNextPminus() function can be used to return the next
+  %      negative-going traveling-wave pressure output from the DWG
+  %      structure. This should then be followed by a call to
+  %      processInput() with a new single positive-going traveling-wave
+  %      input pressure value.
+  %
+  %      If the input end is anechoically terminated (set using the
+  %      setInputEnd() function), the values returned by processInput()
+  %      will be negative-going traveling-wave pressure values. However, if
+  %      the input end is rigidly closed, the values returned by
+  %      processInput() will represent physical pressure at the input
+  %      (though negative-going traveling-wave values can still be accessed
+  %      using the getNextPminus() function). This behavior is based on an
+  %      assumption that if the input end is anechoic, the desired signal
+  %      to calculate is a reflection function, while if the input end is
+  %      closed, the desired signal to calculate is an impulse response.
+  % 
+  %      If calculating an impulse response (with closed input end) and the
+  %      air column begins with a cylindrical segment, an input delta
+  %      function of pressure will produce an impulse response that is
+  %      normalized by the real characteristic impedance at the input. If
+  %      the air column begins with a conical segment, input pressure
+  %      traveling-wave values are first filtered using a digital filter
+  %      that models the complex spherical characteristic impedance (see
+  %      pages 104-108 of Scavone (1997)), and pressure reflection at the
+  %      closed input end is modeled with a corresponding conical
+  %      truncation reflection filter.
   %
   %      A model can be constructed manually by iteratively adding
   %      cylindrical or conical segments via the addSegment() function and
@@ -23,6 +54,7 @@ classdef dwg  < handle
   %      setInputEnd() and setOutputEnd() functions. Boundary layer loss
   %      and fractional delay filtering can be turned on/off using the
   %      setLossFlag() and setFracDelayFlag() functions.
+  %
   %
   %      Possible Updates:
   %        - add ability to dynamically change tonehole states (WDF and three-port)?
@@ -146,8 +178,8 @@ classdef dwg  < handle
     % --------------------------------------------------------------------
     function setGeometry(obj, boreData, holeData, fingering)
       % Setup segments and toneholes according to geometry specified in the
-      % boreData, holeData and fingering arrays.
-      if isempty( holeData )
+      % boreData and holeData arrays.
+      if ~exist( 'holeData', 'var') || isempty( holeData )
         holeData = zeros(6, 0);
       end
       x = sort( [boreData(1,:) holeData(1,:)] ); % segment positions along x-axis
@@ -169,7 +201,7 @@ classdef dwg  < handle
       for n = 1:length(l) % add segments from input to output
         if l(n) == 0, continue; end
         if isHole(n)
-          obj.addTonehole( holeData(2, iHole), holeData(3, iHole), fingering(iHole) );
+          obj.addTonehole( holeData(2, iHole), holeData(3, iHole), holeData(5, iHole) );
           if obj.doDebug
             fprintf(1, 'setGeometry: Hole: x = %f, ra = %f\n', x(n), ra(n));
           end
@@ -464,17 +496,17 @@ classdef dwg  < handle
       obj.D = [obj.D floor(nZ)];   % integer delay length
       obj.ptr = [obj.ptr 1];
       obj.delay{Nth} = zeros(1, obj.D(Nth));
-      if length(radii) == 1, segType = 0; else, segType = 1; end
-      if segType == 1 % conical segment
-        %ra = sum(radii)/2; % average radius
-        ra = diff(radii)/log(1 + diff(radii)/radii(1)); % 'equivalent' radius from Kergomard
-      else
-        ra = radii;
+      if length(radii) == 1 % cylinder
+        segType = 0;
+        ra2 = radii;
+      else % cone
+        segType = 1;
+        ra2 = radii(2);
       end
 
-      % Design filter for thermo-viscous losses
-      [obj.lossFilters{Nth}{1}, obj.lossFilters{Nth}{2}] = dwgLosses(ra, ...
-        ra, 0, obj.fs, nZ, lossOrder, lossOrder, obj.T, lossType, obj.doPlot);
+      % Design filter for thermo-viscous losses.
+      [obj.lossFilters{Nth}{1}, obj.lossFilters{Nth}{2}] = dwgLosses(radii(1), ...
+        ra2, L, obj.fs, nZ, lossOrder, lossOrder, obj.T, lossType, obj.doPlot);
       obj.lossFilters{Nth}{3} = zeros(1, lossOrder);
 
       % Design filter for fractional delay if the flag is set
@@ -490,7 +522,8 @@ classdef dwg  < handle
         obj.fracFilters{Nth}{3} = zeros(1, N);
       end
 
-      % Determine input scattering if first segment is conical
+      % Design closed input end scattering filter if segment is conical and
+      % at the input end.
       if Nth == 1 % first segment added
         if segType == 1 % compute cone input end reflectance
           alphax0 = 2*obj.fs*L*radii(1)/diff(radii);
@@ -595,30 +628,34 @@ classdef dwg  < handle
           pm1 = scatterOnce(obj);
         end
 
-        % Filter new input if input segment is conical
-        if length(obj.radii{1}) == 1 % cylindrical segment at input
-          tmpIn = inData(m);
-        else
-          [tmpIn, obj.inEndFilter{4}(2)] = ...
-            filter(obj.inEndFilter{2}, obj.inEndFilter{3}, inData(m), ...
-            obj.inEndFilter{4}(2));
-        end
-        % Perform reflection at input if closed
+        % If the input end is anechoic, return the next negative-going
+        % traveling wave component (p-). If the input end is closed, return
+        % the physical pressure at the input. If the input end is a closed
+        % conical segment, the input signals passed through a spherical
+        % characteristic impedance filter and negative-going traveling-wave
+        % pressure values are filtered with a conical truncation
+        % reflectance filter.
         switch obj.inEndType % input end reflection condition
+          case 1 % anechoic
+            obj.delay{1}(obj.ptr(1)) = inData(m);
+            outData(m) = pm1; % reflectance output corresponds to p- only
           case 0 % closed
             if length(obj.radii{1}) == 1 % cylindrical segment at input
-              obj.delay{1}(obj.ptr(1)) = tmpIn + pm1;
-              outData(m) = tmpIn + 2 * pm1;
+              obj.delay{1}(obj.ptr(1)) = inData(m) + pm1;
+              outData(m) = inData(m) + 2 * pm1;
             else % conical segment at input
+              % Apply spherical characteristic impedance input filter
+              [tmpIn, obj.inEndFilter{4}(2)] = ...
+                filter(obj.inEndFilter{2}, obj.inEndFilter{3}, inData(m), ...
+                obj.inEndFilter{4}(2));
+              % Apply conical truncation reflectance filter
               [tmp1, obj.inEndFilter{4}(1)] = ...
                 filter(obj.inEndFilter{1}, obj.inEndFilter{3}, pm1, ...
                 obj.inEndFilter{4}(1));
               obj.delay{1}(obj.ptr(1)) = tmpIn + tmp1;
               outData(m) = tmpIn + tmp1 + pm1;
             end
-          case 1 % anechoic
-            obj.delay{1}(obj.ptr(1)) = tmpIn;
-            outData(m) = pm1; % reflectance output corresponds to p- only
+ 
         end
         % Increment delay line pointers
         obj.ptr = obj.ptr + 1;
@@ -664,6 +701,7 @@ classdef dwg  < handle
         fill3(xh(2,:)+obj.holeData(n).pos, yh(2,:), ...
           obj.holeData(n).bRadius+zh(2,:)*obj.holeData(n).height, obj.holeData(n).state*[1 1 1]);
       end
+      hold off;
     end
     
   end
@@ -687,7 +725,7 @@ classdef dwg  < handle
         else
           dlOuts(n) = obj.delay{n}(obj.ptr(n)); % store delay line outputs
         end
-        if ~isempty(obj.fracFilters)
+        if ~isempty(obj.fracFilters) && obj.doFracDelay
           [dlOuts(n), obj.fracFilters{n}{3}] = filter(obj.fracFilters{n}{1}, ...
             obj.fracFilters{n}{2}, dlOuts(n), obj.fracFilters{n}{3});
         end
