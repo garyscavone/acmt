@@ -19,8 +19,8 @@ mydwg = dwg( fs, T );
 %mydwg.setPlotFlag( true );
 mydwg.setGeometry( boreData );
 
-mydwg.setLossFlag( 0 );      % 0 = no losses, 1 = loss filtering
-mydwg.setFracDelayFlag( 0 ); % 0 = no fractional delay, 1 = fractional delay
+mydwg.setLossFlag( 1 );      % 0 = no losses, 1 = loss filtering
+mydwg.setFracDelayFlag( 1 ); % 0 = no fractional delay, 1 = fractional delay
 
 % Specify an unflanged open end modeled by a 2-zero, 1-pole digital filter
 mydwg.setOutputEnd( 2, 2, 1 ); % 0 = closed; 1 = ideally open; 2 = open unflanged, 3 = open flanged
@@ -43,7 +43,7 @@ plot(f, 20*log10(abs(Zin(1:M))), 'b');
 % rzplot( f, Zin(1:M), plotTypes, true, false, [], 'b' ); use rzplot instead
 
 % Compute TMM result for comparison
-lossType = 0;  % 0 = lossless, 1 = traditional losses, 2 = Zwikker-Kosten; 3 = Bessel function
+lossType = 1;  % 0 = lossless, 1 = traditional losses, 2 = Zwikker-Kosten; 3 = Bessel function
 endType = 1;   % 0 = closed, 1 = unflanged, 2 = flanged, 3 = ideally open
 Zin = tmm( boreData, [], endType, f, lossType, T );
 rzplot( f, Zin, plotTypes, true, true, [], 'r' );

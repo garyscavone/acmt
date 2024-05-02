@@ -53,4 +53,3 @@ xlabel('Time (s)')
 ylabel('Mouthpiece pressure')
 soundsc(y, fs)
 title('Clarinet-like mouthpiece pressure output')
-

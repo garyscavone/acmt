@@ -24,8 +24,8 @@ mydwg.setFracDelayFlag( 1 ); % 0 = no fractional delay, 1 = fractional delay
 % Specify an unflanged open end modeled by a 2-zero, 3-pole digital filter
 mydwg.setOutputEnd( 2, 2, 3 ); % 0 = closed; 1 = ideally open; 2 = open unflanged, 3 = open flanged
 mydwg.setInputEnd( 1 );        % 0 = closed input; 1 = anechoic input (reflectance)
-%mydwg.drawShape();            % draw a 3D representation of the geometry
-%disp('paused ... hit key to continue'); pause
+mydwg.drawShape();            % draw a 3D representation of the geometry
+disp('paused ... hit key to continue'); pause
 
 x = [1, zeros(1, N-1)];    % pressure traveling-wave unit impulse vector
 p = mydwg.processInput(x);

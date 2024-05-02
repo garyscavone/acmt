@@ -17,7 +17,7 @@ fingering = 0;
 % Create the digital waveguide class instance and add cylindrical segment
 mydwg = dwg( fs, T );
 mydwg.setDefaults(struct('fracType', 'lagrange', 'fracOrder', 5, 'lossType', 'shelf', ...
-  'lossOrder', 5, 'toneholeType', 'wdf'));
+  'lossOrder', 5, 'toneholeType', 'twoport'));
 mydwg.setGeometry( boreData, holeData );
 mydwg.setLossFlag( 1 );      % 0 = no losses, 1 = loss filtering
 mydwg.setFracDelayFlag( 1 ); % 0 = no fractional delay, 1 = fractional delay
@@ -47,7 +47,7 @@ plot(f, 20*log10(abs(Zin(1:M))), 'b');
 plotTypes = [11 1];
 
 % Compute TMM result for comparison
-lossType = 1;  % 0 = lossless, 1 = traditional losses, 2 = Zwikker-Kosten; 3 = Bessel function
+lossType = 2;  % 0 = lossless, 1 = traditional losses, 2 = Zwikker-Kosten; 3 = Bessel function
 endType = 1;   % 0 = closed, 1 = unflanged, 2 = flanged, 3 = ideally open
 f(1) = eps;
 Zin = tmm( boreData, holeData, endType, f, lossType, T );
@@ -55,4 +55,4 @@ rzplot( f, Zin, plotTypes, true, true, [], 'r', true );
 ylim( [-50 50] );
 subplot(2, 1, 1)
 legend('DWG', 'TMM')
-title( 'Impulse response and input impedance of Keefe flute (lossy, unflanged Z_L)')
+title( 'Reflection function and input impedance of Keefe flute (lossy, unflanged Z_L)')
