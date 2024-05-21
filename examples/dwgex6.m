@@ -47,6 +47,7 @@ for i = 1:N
 	end
 end
 
+clear mydwg;
 t = (0:N-1) / fs;
 plot(t, y, 'b');
 xlabel('Time (s)')

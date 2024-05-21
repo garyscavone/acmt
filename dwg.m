@@ -59,6 +59,13 @@ classdef dwg  < handle
   %      Possible Updates:
   %        - add ability to dynamically change tonehole states (WDF and three-port)?
   %
+  %      Known Issues:
+  %        - if fractional delay filtering initially set but then turned
+  %          off, the delay length may be wrong because some length was
+  %          subtracted from the overall length
+  %        - fractionalOrder in addSegment() should automatically scale if
+  %          desired order is too high for given nZ?
+  %
   % By Gary Scavone, McGill University, 2020-2024.
 
   properties (SetAccess = private, GetAccess = public)
@@ -176,7 +183,7 @@ classdef dwg  < handle
 
 
     % --------------------------------------------------------------------
-    function setGeometry(obj, boreData, holeData, fingering)
+    function setGeometry(obj, boreData, holeData)
       % Setup segments and toneholes according to geometry specified in the
       % boreData and holeData arrays.
       if ~exist( 'holeData', 'var') || isempty( holeData )
@@ -496,7 +503,7 @@ classdef dwg  < handle
       obj.D = [obj.D floor(nZ)];   % integer delay length
       obj.ptr = [obj.ptr 1];
       obj.delay{Nth} = zeros(1, obj.D(Nth));
-      if length(radii) == 1 % cylinder
+      if isscalar(radii) % cylinder
         segType = 0;
         ra2 = radii;
       else % cone
@@ -550,7 +557,7 @@ classdef dwg  < handle
         A2 = radii(1)^2;
         oneoverx2 = diff(radii)/(L*radii(1));
       end
-      if length(obj.radii{Nth-1}) == 1 % previous segment is a cylinder
+      if isscalar(obj.radii{Nth-1}) % previous segment is a cylinder
         A1 = obj.radii{Nth-1}^2;
         oneoverx1 = 0;
       else % previous segment is a cone
@@ -640,8 +647,9 @@ classdef dwg  < handle
             obj.delay{1}(obj.ptr(1)) = inData(m);
             outData(m) = pm1; % reflectance output corresponds to p- only
           case 0 % closed
-            if length(obj.radii{1}) == 1 % cylindrical segment at input
+            if isscalar(obj.radii{1}) % cylindrical segment at input
               obj.delay{1}(obj.ptr(1)) = inData(m) + pm1;
+              %obj.delay{1}(obj.ptr(1)) = 0.5*inData(m) + pm1; % test
               outData(m) = inData(m) + 2 * pm1;
             else % conical segment at input
               % Apply spherical characteristic impedance input filter
@@ -681,7 +689,7 @@ classdef dwg  < handle
       % Draw main air column
       for n = 1:length(obj.L)
         rads = obj.radii{n};
-        if length( rads ) == 1, rads = rads * [1 1]; end
+        if isscalar( rads ), rads = rads * [1 1]; end
          if n == 1
            [zb, yb, xb] = cylinder( rads );
            xb = xb * obj.L(1);

@@ -38,6 +38,7 @@ mydwg.setInputEnd( inputEndType );  % 0 = closed input; 1 = anechoic input (refl
 % a corresponding volume flow traveling-wave signal.
 x = [1, zeros(1, N-1)];    % pressure traveling-wave unit impulse vector
 p = mydwg.processInput(x);
+clear mydwg;
 
 M = (N / 2) + 1;
 f = fs*(0:M-1)/(M-1)/2;

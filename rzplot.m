@@ -20,7 +20,9 @@ function rzplot( f, Zin, plotTypes, doGrid, doHold, xlimits, pcolor, doSmooth, Z
 %   - doHold: optional boolian flag to specify "hold on" before plotting;
 %   - xlimits: optional x-axis plot limits;
 %   - pcolor: optional color for plot data;
-%   - doSmooth: optional boolian flag to specify smoothing of time data.
+%   - doSmooth: optional boolian flag to specify smoothing of time data;
+%   - Z0: planar characteristic impedance at input (needed if input is conical);
+%   - Zcone: spherical characteristic impedance at input (if input is conical).
 %
 % by Gary P. Scavone, McGill University, 2013-2024.
 
@@ -41,7 +43,7 @@ if ( sum(plotTypes > 5) )
       error( 'The argument Z0 is required with Zcone.' );
     end
     R = ( Zin*Z0 - Zcone ) ./ ( Z0*Zin.*Zcone./conj(Zcone) + Zcone );
-  else
+  else % input is cylindrical
     R = (Zin - 1) ./ (Zin + 1);
   end
 end

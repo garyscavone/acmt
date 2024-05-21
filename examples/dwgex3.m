@@ -29,6 +29,7 @@ disp('paused ... hit key to continue'); pause
 
 x = [1, zeros(1, N-1)];    % pressure traveling-wave unit impulse vector
 p = mydwg.processInput(x);
+clear mydwg;
 
 R = fft( p );             % compute reflectance from reflection function
 Zin = (1 + R) ./ (1 - R); % convert reflectance to impedance for cylindrical input

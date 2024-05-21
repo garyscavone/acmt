@@ -16,8 +16,8 @@ function [b, a] = dwgLosses(r1, r2, L, fs, nz, nb, na, T, type, doplot)
 % the filter design process. For the 'shelf' fit, a cascade of NB
 % first-order shelf filters is computed as described in Abel, Smyth and
 % Smith, 2003). If the optional value of DOPLOT != 0 (default = 0), the
-% continuous-time and discrete-time reflectance magnitude and phase
-% responses will be plotted.
+% continuous-time and discrete-time magnitude and phase responses will be
+% plotted.
 %
 % References:
 %
@@ -56,7 +56,7 @@ c = thermoConstants( T );
 % in sectionLosses() to determine an appropriate equivalent radius for
 % conical segments.
 [G, ~] = sectionLosses( r1, r2, L, f, 20, 1 );
-H = exp(-G*nz*c/fs + 1i*omegaof*nz);
+H = exp(-G*nz*c/fs + 1i*omegaof*nz); % subtract pure delay of nz
 
 if strcmp(type, 'invfreqz')
   

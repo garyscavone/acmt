@@ -3,7 +3,7 @@
 % Gary Scavone, McGill University, 2022-2024.
 
 clear; clf
-N = 4000;  % number of samples to compute
+N = 8000;  % number of samples to compute
 fs = 48000; % sample rate
 T = 24;     % temperature
 
@@ -15,6 +15,8 @@ boreData = pipe();
 
 % Create the digital waveguide class instance and add cylindrical segment
 mydwg = dwg( fs, T );
+mydwg.setDefaults(struct('fracType', 'lagrange', 'fracOrder', 5, ...
+  'lossType', 'shelf', 'lossOrder', 5, 'toneholeType', 'twoport'));
 %mydwg.setDebugFlag( true );
 %mydwg.setPlotFlag( true );
 mydwg.setGeometry( boreData );
@@ -28,6 +30,7 @@ mydwg.setInputEnd( 1 );  % 0 = closed input; 1 = anechoic input (reflectance)
 
 x = [1, zeros(1, N-1)];    % pressure traveling-wave unit impulse vector
 p = mydwg.processInput(x); % compute outputs for length of input vector
+clear mydwg;
 
 R = fft( p );              % compute reflectance from reflection function
 Zin = (1 + R) ./ (1 - R);  % convert reflectance to impedance for cylindrical input
@@ -38,6 +41,8 @@ t = (0:N-1) * 1000 / fs;
 plotTypes = [11 1];
 subplot(2, 1, 1)
 plot(t, p, 'b');
+xlim([0 30]);
+ylim([-0.3 0.05]);
 subplot(2, 1, 2)
 plot(f, 20*log10(abs(Zin(1:M))), 'b');
 % rzplot( f, Zin(1:M), plotTypes, true, false, [], 'b' ); use rzplot instead
@@ -47,7 +52,8 @@ lossType = 1;  % 0 = lossless, 1 = traditional losses, 2 = Zwikker-Kosten; 3 = B
 endType = 1;   % 0 = closed, 1 = unflanged, 2 = flanged, 3 = ideally open
 Zin = tmm( boreData, [], endType, f, lossType, T );
 rzplot( f, Zin, plotTypes, true, true, [], 'r' );
-ylim( [-50 50] );
+ylim( [-30 30] );
+xlim( [0 24000]);
 subplot(2, 1, 1)
 legend('DWG', 'TMM')
 title( 'Reflection function and input impedance of 60 cm pipe (unflanged Z_L)')

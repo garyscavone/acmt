@@ -28,6 +28,7 @@ mydwg.setInputEnd( 1 );  % 0 = closed input; 1 = anechoic input (reflectance)
 
 x = [1, zeros(1, N-1)];    % pressure traveling-wave unit impulse vector
 p = mydwg.processInput(x); % compute outputs for length of input vector
+clear mydwg;
 
 t = (0:N-1) * 1000 / fs;
 plot(t, p)

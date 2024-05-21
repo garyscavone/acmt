@@ -21,7 +21,7 @@ function [b, a, m] = dwgFractionDelay(nZ, type, doplot, maxN)
 % 
 % - https://ccrma.stanford.edu/~jos/pasp/Thiran_Allpass_Interpolation_Matlab.html
 %
-% Valimaki and Laakso, "Principles of Fractional Delay Filters," ICASSP
+% - Valimaki and Laakso, "Principles of Fractional Delay Filters," ICASSP
 % 2000.
 %
 % By Gary P. Scavone, McGill University, 2022-2024.

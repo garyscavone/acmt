@@ -30,6 +30,8 @@ mydwg.setInputEnd( 1 );   % 0 = closed input; 1 = anechoic input (reflectance)
 
 x = [1, zeros(1, N-1)];     % pressure traveling-wave impulse
 r = mydwg.processInput(x);  % reflection function (anechoic input)
+clear mydwg;
+
 t = (0:N-1) * 1000 / fs;
 subplot(2, 1, 1)
 plot(t, r, 'b');
