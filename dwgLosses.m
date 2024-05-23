@@ -55,7 +55,7 @@ c = thermoConstants( T );
 % to implement), so we don't use L in the calculation of H. But L is used
 % in sectionLosses() to determine an appropriate equivalent radius for
 % conical segments.
-[G, ~] = sectionLosses( r1, r2, L, f, 20, 1 );
+[G, ~] = sectionLosses( r1, r2, L, f, T, 1 );
 H = exp(-G*nz*c/fs + 1i*omegaof*nz); % subtract pure delay of nz
 
 if strcmp(type, 'invfreqz')
