@@ -47,10 +47,10 @@ function [W, X, Y, Z] = tmmTonehole( delta, b, height, state, Gamma, type, T, ch
 %      Soc. Am., vol 131(4), pp. 3153-3163.
 
 if nargin < 5 || nargin > 11
-  error( 'Incorrect number of parameters.' );
+  error( 'tmmTonehole: Incorrect number of parameters.' );
 end
 if ~isvector(Gamma)
-  error( 'Gamma should be a 1D vector.' );
+  error( 'tmmTonehole: Gamma should be a 1D vector.' );
 end
 if ~exist( 'T', 'var')
   T = 20;
@@ -131,7 +131,7 @@ elseif strcmp( type, 'Lefebvre2012' )
   end
   
 else
-  error( 'Unknown model type parameter.' );
+  error( 'tmmTonehole: Unknown model type parameter.' );
 end
 
 % Matching volume length correction from [2]

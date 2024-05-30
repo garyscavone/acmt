@@ -61,7 +61,8 @@ classdef dwg  < handle
   %
   %      Known Issues:
   %        - if fractional delay filtering initially set but then turned
-  %          off, the delay length may be wrong because some length was
+  %          off, the delay length may be wrong because an integer length
+  %          corresponding to the fractional delay filter order was
   %          subtracted from the overall length
   %        - fractionalOrder in addSegment() should automatically scale if
   %          desired order is too high for given nZ?

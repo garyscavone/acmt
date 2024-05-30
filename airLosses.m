@@ -19,10 +19,10 @@ function alpha = airLosses( f, T, humidity, P0 )
 % by Gary P. Scavone, McGill University, 2013-2024.
 
 if nargin < 1 || nargin > 4
-  error( 'Invalid number of arguments.');
+  error( 'airLosses: Invalid number of arguments.');
 end
 if ~isvector(f)
-  error( 'f should be a 1D vector of frequencies in Hertz.' );
+  error( 'airLosses: f should be a 1D vector of frequencies in Hertz.' );
 end
 if ~exist( 'T', 'var')
   T = 20;

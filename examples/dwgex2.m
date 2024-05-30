@@ -16,7 +16,7 @@ boreData = pipe();
 % Create the digital waveguide class instance and add cylindrical segment
 mydwg = dwg( fs, T );
 mydwg.setDefaults(struct('fracType', 'lagrange', 'fracOrder', 5, ...
-  'lossType', 'shelf', 'lossOrder', 5, 'toneholeType', 'twoport'));
+  'lossType', 'invfreqz', 'lossOrder', 5, 'toneholeType', 'twoport'));
 %mydwg.setDebugFlag( true );
 %mydwg.setPlotFlag( true );
 mydwg.setGeometry( boreData );

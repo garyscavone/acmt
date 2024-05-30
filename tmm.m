@@ -6,12 +6,14 @@ function Zin = tmm( boreData, holeData, endType, f, lossType, T )
 % input impedance of a system defined by BOREDATA and HOLEDATA, normalized
 % by the characteristic impedance at the input, at frequencies specified in
 % the 1D vector F, given an optional air temperature T in degrees Celsius
-% (default = 20 C). The parameter ENDTYPE specifies the bore end condition
-% [0 = rigidly closed; 1 = unflanged open; 2 = flanged open; 3 = ideally
-% open (Zl = 0)]. The optional parameter LOSSTYPE specifies how losses are
-% approximated [0 = no losses; 1 = lowest order losses (previous tmm
-% method, default); 2 = Zwikker-Kosten; 3 = full Bessel function
-% computations].
+% (default = 20 C). The parameter ENDTYPE can either specify a particular
+% bore end condition [0 = rigidly closed; 1 = unflanged open; 2 = flanged
+% open; 3 = ideally open (Zl = 0)] or it can be a 1D vector representing a
+% pre-computed load impedance (which should have the same dimensions as F
+% and should not be normalized by a characteristic impedance). The optional
+% parameter LOSSTYPE specifies how losses are approximated [0 = no losses;
+% 1 = lowest order losses (previous tmm method, default); 2 =
+% Zwikker-Kosten; 3 = full Bessel function computations].
 %
 % BOREDATA is a 2D matrix, with values in the first row corresponding to
 % positions along the center axis of a specified geometry, from input to
@@ -30,10 +32,19 @@ function Zin = tmm( boreData, holeData, endType, f, lossType, T )
 % provided by Champ Darabundit, 2023.
 
 if nargin < 4 || nargin > 6
-  error( 'Invalid number of arguments.');
+  error( 'tmm: Invalid number of arguments.');
 end
 if ~isvector(f)
-  error( 'f should be a 1D vector of frequencies in Hertz.' );
+  error( 'tmm: f should be a 1D vector of frequencies in Hertz.' );
+end
+if ~isscalar(endType)
+  if length(endType) ~= length(f)
+    error( 'tmm: endType impedance vector must be the same length as F.' );
+  end
+else
+  if endType < 0 || endType > 3
+    error('tmm: scalar endType must be between 0 - 3.');
+  end
 end
 if ~exist( 'T', 'var')
   T = 20;
@@ -77,15 +88,19 @@ if f(1) == 0 % avoid zero frequency calculations
 end
 
 % Work our way back from the load impedance at the end.
-switch endType
-  case 1
-    Zl = radiation( ra(end), f, T, 'dalmont' ); % L&S unflanged approximation
-  case 2
-    Zl = radiation( ra(end), f, T, 'flanged' ); % load impedance at end
-  case 3
-    Zl = 0;
-  otherwise
-    Zl = Inf;
+if isscalar(endType)
+  switch endType
+    case 1
+      Zl = radiation( ra(end), f, T, 'dalmont' ); % L&S unflanged approximation
+    case 2
+      Zl = radiation( ra(end), f, T, 'flanged' ); % load impedance at end
+    case 3
+      Zl = 0;
+    otherwise
+      Zl = Inf;
+  end
+else
+  Zl = endType;
 end
 
 nHole = sum(isHole);

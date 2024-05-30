@@ -49,10 +49,10 @@ function [G, Zc] = sectionLosses( r1, r2, L, f, T, lossType, humidity, P0 )
 %       Springer-Verlag.
 
 if nargin < 4 || nargin > 8
-  error( 'Invalid number of arguments.');
+  error( 'sectionLosses: Invalid number of arguments.');
 end
 if ~isvector(f)
-  error( 'f should be a 1D vector of frequencies in Hertz.' );
+  error( 'sectionLosses: f should be a 1D vector of frequencies in Hertz.' );
 end
 if ~exist( 'T', 'var')
   T = 20;
@@ -67,7 +67,7 @@ if ~exist( 'P0', 'var')
   P0 = 101325;    % atmospheric pressure at sea level in Pascals
 end
 if lossType > 3 || mod(lossType, 1) ~= 0
-  error('lossType must be an integer between 0 and 3')
+  error('sectionLosses: lossType must be an integer between 0 and 3')
 end
 
 [c, rho, gamma, lv, Pr] = thermoConstants( T );

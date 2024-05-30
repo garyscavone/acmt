@@ -24,7 +24,7 @@ function [br, ar, bt, at] = dwgTonehole( delta, rb, height, state, fs, T, chimne
 %   By Gary P. Scavone, CAML, McGill University, 2022-2024.
 
 if nargin < 5 || nargin > 11
-  error( 'Incorrect number of parameters.' );
+  error( 'dwgTonehole: Incorrect number of parameters.' );
 end
 if ~exist( 'T', 'var')
   T = 20;

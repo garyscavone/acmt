@@ -6,12 +6,15 @@ function Zin = tmmi( boreData, holeData, endType, f, lossType, T )
 % input impedance of a system defined by BOREDATA and HOLEDATA, normalized
 % by the characteristic impedance at the input, at frequencies specified in
 % the 1D vector F, given an optional air temperature T in degrees Celsius
-% (default = 20 C). The parameter ENDTYPE specifies the bore end condition
-% [0 = rigidly closed; 1 = unflanged open; 2 = flanged open; 3 = ideally
-% open (Zl = 0)]. The optional parameter LOSSTYPE specifies how losses are
-% approximated [0 = no losses; 1 = lowest order losses (previous tmm
-% method, default); 2 = Zwikker-Kosten; 3 = full Bessel function
-% computations].
+% (default = 20 C). The parameter ENDTYPE can either specify a particular
+% bore end condition [0 = rigidly closed; 1 = unflanged open; 2 = flanged
+% open; 3 = ideally open (Zl = 0)] or it can be a 1D vector representing a
+% pre-computed load impedance (which should have the same dimensions as F,
+% should not be normalized by a characteristic impedance, and which is
+% assumed to be open for the calculation of hole interactions). The
+% optional parameter LOSSTYPE specifies how losses are approximated [0 = no
+% losses; 1 = lowest order losses (previous tmm method, default); 2 =
+% Zwikker-Kosten; 3 = full Bessel function computations].
 %
 % BOREDATA is a 2D matrix, with values in the first row corresponding to
 % positions along the center axis of a specified geometry, from input to
@@ -40,11 +43,21 @@ function Zin = tmmi( boreData, holeData, endType, f, lossType, T )
 %      Belgrade.
 
 if nargin < 4 || nargin > 6
-  error( 'Invalid number of arguments.');
+  error( 'tmmi: Invalid number of arguments.');
 end
 if ~isvector(f)
-  error( 'f should be a 1D vector of frequencies in Hertz.' );
+  error( 'tmmi: f should be a 1D vector of frequencies in Hertz.' );
 end
+if ~isscalar(endType)
+  if length(endType) ~= length(f)
+    error( 'tmmi: endType impedance vector must be the same length as F.' );
+  end
+else
+  if endType < 0 || endType > 3
+    error('tmmi: scalar endType must be between 0 - 3.');
+  end
+end
+
 if ~exist( 'T', 'var')
   T = 20;
 end
@@ -88,9 +101,11 @@ if n > 8, holew = holeData(9,:); end % tonehole wall thickness
 
 nOth = sum( states );   % number of open toneholes
 
-% Check pipe end condition
+% Check pipe end condition and increment nOpen if endType is not closed, as
+% the end is another hole. If the user supplies a load impedance, we treat
+% the load impedance as if it is another hole.
 nOpen = nOth;
-if endType
+if ~isscalar(endType) || endType > 0
   nOpen = nOth + 1;
 end
 
@@ -202,14 +217,20 @@ for n = 1:nOth
 end
 
 % Now handle end condition
-if endType
-  switch endType
-    case 1
-      ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'dalmont'); % self-radiation
-    case 2
-      ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'flanged'); % self-radiation
-    case 3
-      ZB(nOpen,nOpen,:) = zeros(size(k));
+if isscalar(endType) && endType == 0  % end is closed
+  Y(nOth,nOth,:) = Ypnm1 + MC./MA;
+else
+  if isscalar(endType)
+    switch endType
+      case 1
+        ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'dalmont'); % self-radiation
+      case 2
+        ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'flanged'); % self-radiation
+      case 3
+        ZB(nOpen,nOpen,:) = zeros(size(k));
+    end
+  else
+    ZB(nOpen, nOpen, :) = endType;
   end
   if doInteractions
     for m = 1:nOth
@@ -219,8 +240,6 @@ if endType
   end
   Y(nOpen,nOpen-1,:) = Ymunm1;
   Y(nOpen,nOpen,:) = Ypnm1;
-else % end is closed
-  Y(nOth,nOth,:) = Ypnm1 + MC./MA;
 end
 
 % Compute Eqs. 14 & 10 for each frequency
