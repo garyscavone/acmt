@@ -51,13 +51,15 @@ end
 if ~isscalar(endType)
   if length(endType) ~= length(f)
     error( 'tmmi: endType impedance vector must be the same length as F.' );
+  elseif size(endType, 1) ~= size(f, 1)
+    % Transpose if not same dimension
+    endType = endType';
   end
 else
   if endType < 0 || endType > 3
     error('tmmi: scalar endType must be between 0 - 3.');
   end
 end
-
 if ~exist( 'T', 'var')
   T = 20;
 end

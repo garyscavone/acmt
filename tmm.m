@@ -40,6 +40,9 @@ end
 if ~isscalar(endType)
   if length(endType) ~= length(f)
     error( 'tmm: endType impedance vector must be the same length as F.' );
+  elseif size(endType, 1) ~= size(f, 1)
+    % Transpose if not same dimension
+    endType = endType';
   end
 else
   if endType < 0 || endType > 3
