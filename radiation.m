@@ -1,17 +1,17 @@
 function [Zr, R] = radiation( a, f, T, type, b )
-% [ZR, R] = RADIATION( A, F, TYPE, T ) computes the radiation impedance ZR
-%      (not normalized by Zc) and reflectance (or reflection coefficient) R
-%      of a cylindrical pipe at frequencies specified in the 1D vector F
-%      (Hertz) and for pipe radius A (in meters). T is an optional air
-%      temperature in degrees Celsius (default = 20 C). TYPE is an optional
-%      parameter specifying a particular condition or formula. The default
-%      ('dalmont') is an unflanged approximation provided in [1]. Other
-%      options include the unflanged ('unflanged') solution by Levine &
-%      Schwinger (1948), an unflanged approximation by Causse ('causse'),
-%      the flanged ('flanged') solution of Norris and Sheng (1989) and a
-%      thick pipe ('thickpipe') approximation provided in [1]. The
-%      parameter B (in meters), which specifies the outer wall thickness,
-%      is required with the 'thickpipe' type.
+% [ZR, R] = RADIATION( A, F, TYPE, T, B ) computes the radiation impedance
+%      ZR (not normalized by Zc) and reflectance (or reflection
+%      coefficient) R of a cylindrical pipe at frequencies specified in the
+%      1D vector F (Hertz) and for pipe radius A (in meters). T is an
+%      optional air temperature in degrees Celsius (default = 20 C). TYPE
+%      is an optional parameter specifying a particular condition or
+%      formula. The default ('dalmont') is an unflanged approximation
+%      provided in [1]. Other options include the unflanged ('unflanged')
+%      solution by Levine & Schwinger (1948), an unflanged approximation by
+%      Causse ('causse'), the flanged ('flanged') solution of Norris and
+%      Sheng (1989) and a thick pipe ('thickpipe') approximation provided
+%      in [1]. The parameter B (in meters), which specifies the radius of
+%      the outer pipe wall, is required with the 'thickpipe' type.
 %
 % by Gary P. Scavone, McGill University, 2013-2025.
 % Based in part on functions from WIAT by Antoine Lefebvre.
