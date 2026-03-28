@@ -60,9 +60,9 @@ end
 k = -1j * Gamma;
 Zc = rho * c / ( pi * b * b );
 
-if nargin < 8 || isempty(type), type = 'Lefebvre2012'; end
-if nargin < 9, chimney = 0; end
-if nargin < 10, rPad = 0; end
+if nargin < 6 || isempty(type), type = 'Lefebvre2012'; end
+if nargin < 8, chimney = 0; end
+if nargin < 9, rPad = 0; end
 if nargin < 10, hPad = 0; end
 if nargin < 11, w = 0; end
 
