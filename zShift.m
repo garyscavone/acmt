@@ -1,6 +1,6 @@
 function shiftedZ = zShift( Z, f, torf1, torf2, type )
 % ZSHIFT: Reinterpolate impedance values based on either a temperature
-% or a frequency difference.
+% or a frequency change.
 %
 % SHIFTEDZ = ZSHIFT( Z, F, TORF1, TORF2, TYPE ) takes a 1D vector of
 % complex impedance values Z sampled at the frequencies specified in the 1D
@@ -8,7 +8,8 @@ function shiftedZ = zShift( Z, f, torf1, torf2, type )
 % frequencies in F). If TYPE is equal to 'temperature' (default), the shift
 % is calculated as corresponding to what Z is expected to be at temperature
 % TORF2 if it was originally measured or calculated at TORF1 (in Celsius).
-% If TYPE is equal to 'frequency', the shift is calculated to shift a peak
+% If TYPE is equal to 'frequency', the frequency axis is scaled (and
+% reinterpolated) by TORF2 / TORF1.
 %
 % by Gary P. Scavone, McGill University, 2026.
 
