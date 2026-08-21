@@ -1,25 +1,24 @@
-function [G, Zc] = sectionLosses( r1, r2, L, f, T, lossType, humidity, P0 )
+function [G, Zc] = sectionLosses( r1, r2, L, f, T, lossType, RH, CO2, P0 )
 % SECTIONLOSSES: Compute the lossy complex wave propagation variable and
 % characteristic impedance for a waveguide section.
 %
-% [G, ZC] = SECTIONLOSSES( R1, R2, L, F, T, LOSSYPE, HUMIDITY, P0 )
-% computes the wave propagation variable GAMMA and the complex
-% characteristic impedance ZC for given frequency values F in a
-% cylindrical, conical or tonehole waveguide section of input radius R1,
-% output radius R2 and length L. For cylindrical sections, R1 = R2. If the
-% temperature T is not specified, a default value of 20 C is assumed. If
-% either the relative HUMIDITY (as percentage) or atmospheric pressure (P0,
-% in Pascals) is not specified, values of 40% and 101325 Pascals will be
-% used by default. If parameter LOSSTYPE = 0, losses will be ignored.
-% Otherwise, classical and molecular air losses are included, as well as
-% various boundary layer loss approximations, with increasing accuracy as
-% given by LOSSTYPE (default = 1):
+% [G, ZC] = SECTIONLOSSES( R1, R2, L, F, T, LOSSYPE, RH, CO2, P0 ) computes
+% the wave propagation variable GAMMA and the complex characteristic
+% impedance ZC for given frequency values F in a cylindrical, conical or
+% tonehole waveguide section of input radius R1, output radius R2 and
+% length L. For cylindrical sections, R1 = R2. If the temperature T is not
+% specified, a default value of 20 C is assumed. Other optional parameter
+% default values are: relative humidity RH (50%), carbon dioxide (0.042%),
+% atmospheric pressure P0 (101325 Pascals). If parameter LOSSTYPE = 0,
+% losses will be ignored. Otherwise, classical and molecular air losses are
+% included, as well as various boundary layer loss approximations, with
+% increasing accuracy as given by LOSSTYPE (default = 1):
 %
 %   1 - "Standard" TMM boundary layer losses from [1], [2], [3].
 %       Zeroth/First order approximations.
 %   2 - Second/Fourth order approximations (depending on bore radius)
 %       from [4] and [5].
-%   3 - Numerical computation of Bessel functions of thie first kind,
+%   3 - Numerical computation of Bessel functions of the first kind,
 %       from [4].
 %
 % For LOSSTYPE = 1 and LOSSTYPE = 2, the type of loss (wide or narrow pipe)
@@ -60,8 +59,11 @@ end
 if ~exist( 'lossType', 'var')
   lossType = 1;
 end
-if ~exist( 'humidity', 'var')
-  humidity = 40;  % room humidity as percentage
+if ~exist( 'RH', 'var') || isempty(RH)
+  RH = 50; % percent
+end
+if ~exist( 'CO2', 'var') || isempty(CO2)
+  CO2 = 0.042; % percent
 end
 if ~exist( 'P0', 'var')
   P0 = 101325;    % atmospheric pressure at sea level in Pascals
@@ -70,7 +72,7 @@ if lossType > 3 || mod(lossType, 1) ~= 0
   error('sectionLosses: lossType must be an integer between 0 and 3')
 end
 
-[c, rho, gamma, lv, Pr] = thermoConstants( T );
+[c, rho, gamma, lv, Pr] = thermoConstants( T, RH, CO2 );
 k = 2 * pi * f / c;
 Zc = rho * c / ( pi * r1 * r2 );
 
@@ -134,6 +136,6 @@ elseif lossType == 3
 end
 
 % Include classical and molecular air losses
-G = G + airLosses( f, T, humidity, P0 );
+G = G + airLosses( f, T, RH, P0 );
 
 end

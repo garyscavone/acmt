@@ -6,7 +6,7 @@
 
 clear; clf;
 lossy = 0;   % 0 = lossless, 1 = traditional losses, 2 = Zwikker-Kosten; 3 = Bessel function
-endType = 3; % 0 = closed, 1 = unflanged, 2 = flanged, 3 = ideally open
+endType = 0; % 0 = closed, 1 = unflanged, 2 = flanged, 3 = ideally open
 
 % Evaluation frequencies
 fmax = 6000;          % maximum evaluation frequency (Hz)

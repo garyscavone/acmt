@@ -1,4 +1,4 @@
-function Zin = tmm( boreData, holeData, endType, f, lossType, T )
+function Zin = tmm( boreData, holeData, endType, f, lossType, T, RH, CO2 )
 % TMM: Compute the normalized input impedance of a system using the
 %      transfer matrix method.
 %
@@ -6,14 +6,16 @@ function Zin = tmm( boreData, holeData, endType, f, lossType, T )
 % input impedance of a system defined by BOREDATA and HOLEDATA, normalized
 % by the characteristic impedance at the input, at frequencies specified in
 % the 1D vector F, given an optional air temperature T in degrees Celsius
-% (default = 20 C). The parameter ENDTYPE can either specify a particular
-% bore end condition [0 = rigidly closed; 1 = unflanged open; 2 = flanged
-% open; 3 = ideally open (Zl = 0)] or it can be a 1D vector representing a
-% pre-computed load impedance (which should have the same dimensions as F
-% and should not be normalized by a characteristic impedance). The optional
-% parameter LOSSTYPE specifies how losses are approximated [0 = no losses;
-% 1 = lowest order losses (previous tmm method, default); 2 =
-% Zwikker-Kosten; 3 = full Bessel function computations].
+% (default = 20 C), an optional relative humidity RH (default = 50%) and an
+% optional carbon dioxide percentage CO2 (default = 0.042%). The parameter
+% ENDTYPE can either specify a particular bore end condition [0 = rigidly
+% closed; 1 = unflanged open; 2 = flanged open; 3 = ideally open (Zl = 0)]
+% or it can be a 1D vector representing a pre-computed load impedance
+% (which should have the same dimensions as F and should not be normalized
+% by a characteristic impedance). The optional parameter LOSSTYPE specifies
+% how losses are approximated [0 = no losses; 1 = lowest order losses
+% (previous tmm method, default); 2 = Zwikker-Kosten; 3 = full Bessel
+% function computations].
 %
 % BOREDATA is a 2D matrix, with values in the first row corresponding to
 % positions along the center axis of a specified geometry, from input to
@@ -29,9 +31,9 @@ function Zin = tmm( boreData, holeData, endType, f, lossType, T )
 % than states, are in meters).
 %
 % Initially by Gary P. Scavone, McGill University, 2013-2024, updates
-% provided by Champ Darabundit, 2023.
+% provided by Champ Darabundit, 2026.
 
-if nargin < 4 || nargin > 6
+if nargin < 4 || nargin > 8
   error( 'tmm: Invalid number of arguments.');
 end
 if ~isvector(f)
@@ -51,6 +53,12 @@ else
 end
 if ~exist( 'T', 'var')
   T = 20;
+end
+if ~exist( 'RH', 'var')
+  RH = 50; % percent
+end
+if ~exist( 'CO2', 'var')
+  CO2 = 0.042; % percent
 end
 if ~exist( 'lossType', 'var')
   lossType = 1;
@@ -94,9 +102,9 @@ end
 if isscalar(endType)
   switch endType
     case 1
-      Zl = radiation( ra(end), f, T, 'dalmont' ); % L&S unflanged approximation
+      Zl = radiation( ra(end), f, T, 'dalmont', [], RH, CO2 ); % L&S unflanged approximation
     case 2
-      Zl = radiation( ra(end), f, T, 'flanged' ); % load impedance at end
+      Zl = radiation( ra(end), f, T, 'flanged', [], RH, CO2 ); % load impedance at end
     case 3
       Zl = 0;
     otherwise
@@ -109,7 +117,7 @@ end
 nHole = sum(isHole);
 for n = length(L):-1:1
   if L(n) > eps
-    [Gamma, Zc] = sectionLosses( ra(n), ra(n+1), L(n), f, T, lossType );
+    [Gamma, Zc] = sectionLosses( ra(n), ra(n+1), L(n), f, T, lossType, RH, CO2 );
     [A, B, C, D] = tmmCylCone( ra(n), ra(n+1), L(n), Gamma, Zc );
     if Zl == 0
       Zl = B ./ D;
@@ -119,7 +127,7 @@ for n = length(L):-1:1
   end
   
   if isHole(n)
-    Gamma = sectionLosses( rb(nHole), rb(nHole), 0, f, T, lossType );
+    Gamma = sectionLosses( rb(nHole), rb(nHole), 0, f, T, lossType, RH, CO2 );
     [A, B, C, D] = tmmTonehole( rb(nHole)/ra(n), rb(nHole), t(nHole), ...
       states(nHole), Gamma, '', T, chimney(nHole), padr(nHole), ...
       padt(nHole), holew(nHole) );
@@ -129,7 +137,7 @@ for n = length(L):-1:1
 end
 
 if ra(1) ~= ra(2) % recalculate Zc for input conic section
-  [c, rho] = thermoConstants( T );
+  [c, rho] = thermoConstants( T, RH, CO2 );
   Zc = rho * c / ( pi * ra(1) * ra(1) );
 end
 Zin = Zl ./ Zc;

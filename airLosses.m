@@ -1,4 +1,4 @@
-function alpha = airLosses( f, T, humidity, P0 )
+function alpha = airLosses( f, T, RH, P0 )
 %  AIRLOSSES: Determine classical and molecular propagation losses at the
 %  specified frequencies for given values of temperature, humidity and
 %  atmospheric pressure.
@@ -6,8 +6,8 @@ function alpha = airLosses( f, T, humidity, P0 )
 % ALPHA = AIRLOSSES( F, T, HUMIDITY, P0 ) returns a vector ALPHA (of size
 % equal to F) of wave propagation loss factors due to classical and
 % molecular effects. If the temperature T is not specified, a default value
-% of 20 C is assumed. If either the relative HUMIDITY (as percentage) or
-% atmospheric pressure (P0, in Pascals) is not specified, values of 40% and
+% of 20 C is assumed. If either the relative humidity RH (as percentage) or
+% atmospheric pressure (P0, in Pascals) is not specified, values of 50% and
 % 101325 Pascals will be used by default.
 %
 % References:
@@ -28,7 +28,7 @@ if ~exist( 'T', 'var')
   T = 20;
 end
 if ~exist( 'humidity', 'var')
-  humidity = 40;  % room humidity as percentage
+  RH = 50;  % room humidity as percentage
 end
 if ~exist( 'P0', 'var')
   P0 = 101325;    % atmospheric pressure at sea level in Pascals
@@ -46,7 +46,7 @@ alphavgm = pi*(gamma-1)^2/(2*gamma);
 alphav1g = alphavgm * cv1oR;  % maximum absorption per wavelength for O2
 alphav2g = alphavgm * cv2oR;  % maximum absorption per wavelength for N2
 
-h = 0.01 * humidity * pv / P0;  % humidity factor
+h = 0.01 * RH * pv / P0;  % humidity factor
 G = 4.41*10^6*h*(0.05 + 100*h)/(0.391 + 100*h);
 T1 = 293.16;
 TA = T + 273.15; % absolute temperature in Kelvin

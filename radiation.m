@@ -1,4 +1,4 @@
-function [Zr, R] = radiation( a, f, T, type, b )
+function [Zr, R] = radiation( a, f, T, type, b, RH, CO2 )
 % [ZR, R] = RADIATION( A, F, TYPE, T, B ) computes the radiation impedance
 %      ZR (not normalized by Zc) and reflectance (or reflection
 %      coefficient) R of a cylindrical pipe at frequencies specified in the
@@ -11,9 +11,11 @@ function [Zr, R] = radiation( a, f, T, type, b )
 %      Causse ('causse'), the flanged ('flanged') solution of Norris and
 %      Sheng (1989) and a thick pipe ('thickpipe') approximation provided
 %      in [1]. The parameter B (in meters), which specifies the radius of
-%      the outer pipe wall, is required with the 'thickpipe' type.
+%      the outer pipe wall, is required with the 'thickpipe' type. The
+%      other optional parameters are relative humidity RH (default = 50%)
+%      and carbon dioxide percentage CO2 (default = 0.042%).
 %
-% by Gary P. Scavone, McGill University, 2013-2025.
+% by Gary P. Scavone, McGill University, 2013-2026.
 % Based in part on functions from WIAT by Antoine Lefebvre.
 %
 % References:
@@ -42,7 +44,7 @@ function [Zr, R] = radiation( a, f, T, type, b )
 % Zr is:
 %     Zr = 0.25*ka^2 + 0.61j*ka
 
-if nargin < 2 || nargin > 5
+if nargin < 2 || nargin > 7
   error( 'radiation: Invalid number of arguments.');
 end
 if ~isvector(f)
@@ -57,8 +59,14 @@ end
 if strcmp( type, 'thickpipe' ) && nargin < 5
   error( 'radiation: b is a required parameter for thickpipe type.' );
 end
+if ~exist( 'RH', 'var') || isempty(RH)
+  RH = 50; % percent
+end
+if ~exist( 'CO2', 'var') || isempty(CO2)
+  CO2 = 0.042; % percent
+end
 
-[c, rho] = thermoConstants( T );
+[c, rho] = thermoConstants( T, RH, CO2 );
 ka = 2 * pi * f * a / c;
 ka2 = ka.^2;
 
