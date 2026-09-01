@@ -3,7 +3,7 @@ function alpha = airLosses( f, T, RH, P0 )
 %  specified frequencies for given values of temperature, humidity and
 %  atmospheric pressure.
 %
-% ALPHA = AIRLOSSES( F, T, HUMIDITY, P0 ) returns a vector ALPHA (of size
+% ALPHA = AIRLOSSES( F, T, RH, P0 ) returns a vector ALPHA (of size
 % equal to F) of wave propagation loss factors due to classical and
 % molecular effects. If the temperature T is not specified, a default value
 % of 20 C is assumed. If either the relative humidity RH (as percentage) or
@@ -27,7 +27,7 @@ end
 if ~exist( 'T', 'var')
   T = 20;
 end
-if ~exist( 'humidity', 'var')
+if ~exist( 'RH', 'var')
   RH = 50;  % room humidity as percentage
 end
 if ~exist( 'P0', 'var')
