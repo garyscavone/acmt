@@ -1,22 +1,24 @@
-function Zin = tmmi( boreData, holeData, endType, f, lossType, T, RH, CO2 )
+function Zin = tmmi( boreData, holeData, endType, f, lossType, T, b, RH, CO2 )
 % TMMI: Compute the normalized input impedance of a system using the
 %       transfer matrix method with external tonehole interactions.
 %
-% ZIN = TMMI( BOREDATA, HOLEDATA, ENDTYPE, F, LOSSTYPE, T ) returns the
-% input impedance of a system defined by BOREDATA and HOLEDATA, normalized
-% by the characteristic impedance at the input, at frequencies specified in
-% the 1D vector F, given an optional air temperature T in degrees Celsius
-% (default = 20 C), an optional relative humidity RH (default = 50%) and an
-% optional carbon dioxide percentage CO2 (default = 0.042%). The parameter
-% ENDTYPE can either specify a particular bore end condition [0 = rigidly
-% closed; 1 = unflanged open; 2 = flanged open; 3 = ideally open (Zl = 0)]
-% or it can be a 1D vector representing a pre-computed load impedance
-% (which should have the same dimensions as F, should not be normalized by
-% a characteristic impedance, and which is assumed to be open for the
-% calculation of hole interactions). The optional parameter LOSSTYPE
-% specifies how losses are approximated [0 = no losses; 1 = lowest order
-% losses (previous tmm method, default); 2 = Zwikker-Kosten; 3 = full
-% Bessel function computations].
+% ZIN = TMMI( BOREDATA, HOLEDATA, ENDTYPE, F, LOSSTYPE, T, B, RH, CO2 )
+% returns the input impedance of a system defined by BOREDATA and HOLEDATA,
+% normalized by the characteristic impedance at the input, at frequencies
+% specified in the 1D vector F, given an optional air temperature T in
+% degrees Celsius (default = 20 C), an optional relative humidity RH
+% (default = 50%) and an optional carbon dioxide percentage CO2 (default =
+% 0.042%). The parameter ENDTYPE can either specify a particular bore end
+% condition [0 = rigidly closed; 1 = unflanged open; 2 = flanged open; 3 =
+% ideally open (Zl = 0)] or it can be a 1D vector representing a
+% pre-computed load impedance (which should have the same dimensions as F,
+% should not be normalized by a characteristic impedance, and which is
+% assumed to be open for the calculation of hole interactions). The
+% optional parameter LOSSTYPE specifies how losses are approximated [0 = no
+% losses; 1 = lowest order losses (previous tmm method, default); 2 =
+% Zwikker-Kosten; 3 = full Bessel function computations]. The optional
+% parameter B specifies the wall thickness at the end of the object, which
+% will be used if ENDTYPE = 1 (unflanged open).
 %
 % BOREDATA is a 2D matrix, with values in the first row corresponding to
 % positions along the center axis of a specified geometry, from input to
@@ -44,7 +46,7 @@ function Zin = tmmi( boreData, holeData, endType, f, lossType, T, RH, CO2 )
 %      musical instruments." Proceedings of the 1989 Congress on Acoustics,
 %      Belgrade.
 
-if nargin < 4 || nargin > 8
+if nargin < 4 || nargin > 9
   error( 'tmmi: Invalid number of arguments.');
 end
 if ~isvector(f)
@@ -62,13 +64,16 @@ else
     error('tmmi: scalar endType must be between 0 - 3.');
   end
 end
-if ~exist( 'T', 'var')
+if ~exist( 'T', 'var') || isempty(T)
   T = 20;
 end
-if ~exist( 'RH', 'var')
+if ~exist( 'b', 'var') || isempty(b)
+  b = 0;
+end
+if ~exist( 'RH', 'var') || isempty(RH)
   RH = 50; % percent
 end
-if ~exist( 'CO2', 'var')
+if ~exist( 'CO2', 'var') || isempty(CO2)
   CO2 = 0.042; % percent
 end
 if ~exist( 'lossType', 'var')
@@ -124,7 +129,7 @@ if f(1) == 0 % avoid zero frequency calculations
 end
 
 if nOpen < 2  % Do TMM
-  Zin = tmm( boreData, holeData, endType, f, lossType, T, RH, CO2 );
+  Zin = tmm( boreData, holeData, endType, f, lossType, T, b, RH, CO2 );
   return
 end
 
@@ -233,7 +238,11 @@ else
   if isscalar(endType)
     switch endType
       case 1
-        ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'dalmont', [], RH, CO2); % self-radiation
+        if b == 0
+          ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'dalmont', [], RH, CO2); % self-radiation
+        else
+          ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'thickpipe', b, RH, CO2 ); % L&S unflanged approximation
+        end
       case 2
         ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'flanged', [], RH, CO2); % self-radiation
       case 3

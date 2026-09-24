@@ -9,11 +9,12 @@ function [Zr, R] = radiation( a, f, T, type, b, RH, CO2 )
 %      provided in [1]. Other options include the unflanged ('unflanged')
 %      solution by Levine & Schwinger (1948), an unflanged approximation by
 %      Causse ('causse'), the flanged ('flanged') solution of Norris and
-%      Sheng (1989) and a thick pipe ('thickpipe') approximation provided
-%      in [1]. The parameter B (in meters), which specifies the radius of
-%      the outer pipe wall, is required with the 'thickpipe' type. The
-%      other optional parameters are relative humidity RH (default = 50%)
-%      and carbon dioxide percentage CO2 (default = 0.042%).
+%      Sheng (1989), a normalized flange ('normalizedflange'), and a thick
+%      pipe ('thickpipe') approximation provided in [1]. The parameter B
+%      (in meters), which specifies the radius of the outer pipe wall, is
+%      required with the 'thickpipe' type. The other optional parameters
+%      are relative humidity RH (default = 50%) and carbon dioxide
+%      percentage CO2 (default = 0.042%).
 %
 % by Gary P. Scavone, McGill University, 2013-2026.
 % Based in part on functions from WIAT by Antoine Lefebvre.
@@ -50,10 +51,10 @@ end
 if ~isvector(f)
   error( 'radiation: f should be a 1D vector of frequencies in Hertz.' );
 end
-if ~exist( 'T', 'var')
+if ~exist( 'T', 'var') || isempty(T)
   T = 20;
 end
-if ~exist( 'type', 'var')
+if ~exist( 'type', 'var') || isempty(type)
   type = 'dalmont';
 end
 if strcmp( type, 'thickpipe' ) && nargin < 5
@@ -130,6 +131,14 @@ elseif strcmp( type, 'flanged' )
   % with an infinite flange." Journal of Sound and Vibration, Vol. 135,
   % pp. 85-93, 1989.
   [R0, delta] = flanged(ka, ka2);
+  R = -abs(R0).*exp(-2*1i*ka.*delta);
+  Zr = (1 + R) ./ (1 - R);
+
+elseif strcmp( type, 'normalizedflange' )
+  % From [1, Eq. 44], the normalized flange is very similar to the infinite flange,
+  % with a slightly shorter end correction.
+  [R0, delta] = flanged(ka, ka2);
+  delta = 0.975 * delta;
   R = -abs(R0).*exp(-2*1i*ka.*delta);
   Zr = (1 + R) ./ (1 - R);
 
