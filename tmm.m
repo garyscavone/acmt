@@ -8,16 +8,24 @@ function Zin = tmm( boreData, holeData, endType, f, lossType, T, b, RH, CO2 )
 % specified in the 1D vector F, given an optional air temperature T in
 % degrees Celsius (default = 20 C), an optional relative humidity RH
 % (default = 50%) and an optional carbon dioxide percentage CO2 (default =
-% 0.042%). The parameter ENDTYPE can either specify a particular bore end
-% condition [0 = rigidly closed; 1 = unflanged open; 2 = flanged open; 3 =
-% ideally open (Zl = 0)] or it can be a 1D vector representing a
-% pre-computed load impedance (which should have the same dimensions as F
-% and should not be normalized by a characteristic impedance). The optional
-% parameter LOSSTYPE specifies how losses are approximated [0 = no losses;
-% 1 = lowest order losses (previous tmm method, default); 2 =
-% Zwikker-Kosten; 3 = full Bessel function computations]. The optional
-% parameter B specifies the wall thickness at the end of the object, which
-% will be used if ENDTYPE = 1 (unflanged open).
+% 0.042%).
+% 
+% The parameter ENDTYPE can either specify a particular bore end case
+% number [0 = rigidly closed; 1 = unflanged open; 2 = flanged open; 3 =
+% ideally open (Zl = 0)], or a more specific end formula ['closed',
+% 'ideally-open', 'unflanged-silva-noncausal' (default for case 1),
+% 'unflanged-silva-causal', 'flanged-silva-noncausal' (default for case 2),
+% 'flanged-silva-causal', 'unflanged-dalmont', 'unflanged-ls-integration',
+% 'flanged-norris', 'normalizedflange', 'thickpipe'] or it can be a 1D
+% vector representing a pre-computed load impedance (which should have the
+% same dimensions as F and should not be normalized by a characteristic
+% impedance). If ENDTYPE = 'thickpipe', the parameter B, which specifies
+% the outer wall radius at the end of the object, must be provided. Details
+% of the various formula can be found in radiation.m.
+% 
+% The optional parameter LOSSTYPE specifies how losses are approximated [0
+% = no losses; 1 = lowest order losses (previous tmm method, default); 2 =
+% Zwikker-Kosten; 3 = full Bessel function computations]. 
 %
 % BOREDATA is a 2D matrix, with values in the first row corresponding to
 % positions along the center axis of a specified geometry, from input to
@@ -41,14 +49,14 @@ end
 if ~isvector(f)
   error( 'tmm: f should be a 1D vector of frequencies in Hertz.' );
 end
-if ~isscalar(endType)
+if ~isscalar(endType) && ~ischar(endType)
   if length(endType) ~= length(f)
     error( 'tmm: endType impedance vector must be the same length as F.' );
   elseif size(endType, 1) ~= size(f, 1)
     % Transpose if not same dimension
     endType = endType';
   end
-else
+elseif isscalar(endType)
   if endType < 0 || endType > 3
     error('tmm: scalar endType must be between 0 - 3.');
   end
@@ -85,45 +93,47 @@ isHole = zeros(size(x));                   % is x value at a tonehole?
 for n = 1:length(x)
   isHole(n) = 1 - isempty(find(x(n)==holeData(1,:), 1));
 end
+nHole = sum(isHole);
 
-% Tonehole dimensions and states
-rb = holeData(2,:).';            % tonehole radii
-t = holeData(3,:).';             % tonehole heights
-chimney = holeData(4,:);         % tonehole chimney height
-states = holeData(5,:);          % tonehole states
-[n, m] = size(holeData);
-padr = zeros(1, m);
-padt = zeros(1, m);
-holew = zeros(1, m);
-if n > 6, padr = holeData(7,:); end % tonehole pad radii
-if n > 7, padt = holeData(8,:); end % tonehole pad heights
-if n > 8, holew = holeData(9,:); end % tonehole wall thickness
+if nHole
+  % Tonehole dimensions and states
+  rb = holeData(2,:).';            % tonehole radii
+  t = holeData(3,:).';             % tonehole heights
+  chimney = holeData(4,:);         % tonehole chimney height
+  states = holeData(5,:);          % tonehole states
+  [n, m] = size(holeData);
+  padr = zeros(1, m);
+  padt = zeros(1, m);
+  holew = zeros(1, m);
+  if n > 6, padr = holeData(7,:); end % tonehole pad radii
+  if n > 7, padt = holeData(8,:); end % tonehole pad heights
+  if n > 8, holew = holeData(9,:); end % tonehole wall thickness
+end
 
 if f(1) == 0 % avoid zero frequency calculations
   f(1) = eps;
 end
 
 % Work our way back from the load impedance at the end.
-if isscalar(endType)
+if isscalar(endType) || ischar(endType)
   switch endType
-    case 1
-      if b == 0
-        Zl = radiation( ra(end), f, T, 'dalmont', [], RH, CO2 ); % L&S unflanged approximation
-      else
-        Zl = radiation( ra(end), f, T, 'thickpipe', b, RH, CO2 ); % L&S unflanged approximation
-      end
-    case 2
-      Zl = radiation( ra(end), f, T, 'flanged', [], RH, CO2 ); % load impedance at end
-    case 3
-      Zl = 0;
-    otherwise
+    case {0, 'closed'}
       Zl = Inf;
+    case {1, 'unflanged-silva-noncausal'}
+      Zl = radiation( ra(end), f, T, 'unflanged-silva-noncausal', [], RH, CO2 );
+    case {2, 'flanged-silva-noncausal'}
+      Zl = radiation( ra(end), f, T, 'flanged-silva-noncausal', [], RH, CO2 );
+    case {3, 'ideally-open'}
+      Zl = 0;
+    case {'thickpipe'}
+      Zl = radiation( ra(end), f, T, 'thickpipe', b, RH, CO2 );
+    otherwise
+      Zl = radiation( ra(end), f, T, endType, [], RH, CO2 );
   end
 else
   Zl = endType;
 end
 
-nHole = sum(isHole);
 for n = length(L):-1:1
   if L(n) > eps
     [Gamma, Zc] = sectionLosses( ra(n), ra(n+1), L(n), f, T, lossType, RH, CO2 );
@@ -145,8 +155,7 @@ for n = length(L):-1:1
   end
 end
 
-if ra(1) ~= ra(2) % recalculate Zc for input conic section
-  [c, rho] = thermoConstants( T, RH, CO2 );
-  Zc = rho * c / ( pi * ra(1) * ra(1) );
-end
+% Calculate real wave impedance at entrance for scaling
+[c, rho] = thermoConstants( T, RH, CO2 );
+Zc = rho * c / ( pi * ra(1) * ra(1) );
 Zin = Zl ./ Zc;

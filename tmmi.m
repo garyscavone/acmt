@@ -309,8 +309,7 @@ for n = xidx(1)-1:-1:1
   end
 end
 
-if ra(1) ~= ra(2) % recalculate Zc for input conic section
-  [c, rho] = thermoConstants( T, RH, CO2 );
-  Zc = rho * c / ( pi * ra(1) * ra(1) );
-end
+% Calculate real wave impedance at entrance for scaling
+[c, rho] = thermoConstants( T, RH, CO2 );
+Zc = rho * c / ( pi * ra(1) * ra(1) );
 Zin = Zl ./ Zc;
