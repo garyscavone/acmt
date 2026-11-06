@@ -8,17 +8,24 @@ function Zin = tmmi( boreData, holeData, endType, f, lossType, T, b, RH, CO2 )
 % specified in the 1D vector F, given an optional air temperature T in
 % degrees Celsius (default = 20 C), an optional relative humidity RH
 % (default = 50%) and an optional carbon dioxide percentage CO2 (default =
-% 0.042%). The parameter ENDTYPE can either specify a particular bore end
-% condition [0 = rigidly closed; 1 = unflanged open; 2 = flanged open; 3 =
-% ideally open (Zl = 0)] or it can be a 1D vector representing a
-% pre-computed load impedance (which should have the same dimensions as F,
-% should not be normalized by a characteristic impedance, and which is
-% assumed to be open for the calculation of hole interactions). The
-% optional parameter LOSSTYPE specifies how losses are approximated [0 = no
-% losses; 1 = lowest order losses (previous tmm method, default); 2 =
-% Zwikker-Kosten; 3 = full Bessel function computations]. The optional
-% parameter B specifies the wall thickness at the end of the object, which
-% will be used if ENDTYPE = 1 (unflanged open).
+% 0.042%).
+% 
+% The parameter ENDTYPE can either specify a particular bore end case
+% number [0 = rigidly closed; 1 = unflanged open; 2 = flanged open; 3 =
+% ideally open (Zl = 0)], or a more specific end formula ['closed',
+% 'ideally-open', 'unflanged-silva-noncausal' (default for case 1),
+% 'unflanged-silva-causal', 'flanged-silva-noncausal' (default for case 2),
+% 'flanged-silva-causal', 'unflanged-dalmont', 'unflanged-ls-integration',
+% 'flanged-norris', 'normalizedflange', 'thickpipe'] or it can be a 1D
+% vector representing a pre-computed load impedance (which should have the
+% same dimensions as F and should not be normalized by a characteristic
+% impedance). If ENDTYPE = 'thickpipe', the parameter B, which specifies
+% the outer wall radius at the end of the object, must be provided. Details
+% of the various formula can be found in radiation.m.
+%
+% The optional parameter LOSSTYPE specifies how losses are approximated [0
+% = no losses; 1 = lowest order losses (previous tmm method, default); 2 =
+% Zwikker-Kosten; 3 = full Bessel function computations]. 
 %
 % BOREDATA is a 2D matrix, with values in the first row corresponding to
 % positions along the center axis of a specified geometry, from input to
@@ -33,7 +40,7 @@ function Zin = tmmi( boreData, holeData, endType, f, lossType, T, b, RH, CO2 )
 % states, pad radii, pad heights and wall thicknesses (all values, other
 % than states, are in meters).
 %
-% Initially by Gary P. Scavone, McGill University, 2013-2024, updates
+% Initially by Gary P. Scavone, McGill University, 2013-2026, updates
 % provided by Champ Darabundit, 2023.
 %
 % References:
@@ -52,14 +59,14 @@ end
 if ~isvector(f)
   error( 'tmmi: f should be a 1D vector of frequencies in Hertz.' );
 end
-if ~isscalar(endType)
+if ~isscalar(endType) && ~ischar(endType)
   if length(endType) ~= length(f)
     error( 'tmmi: endType impedance vector must be the same length as F.' );
   elseif size(endType, 1) ~= size(f, 1)
     % Transpose if not same dimension
     endType = endType';
   end
-else
+elseif isscalar(endType)
   if endType < 0 || endType > 3
     error('tmmi: scalar endType must be between 0 - 3.');
   end
@@ -232,21 +239,22 @@ for n = 1:nOth
 end
 
 % Now handle end condition
-if isscalar(endType) && endType == 0  % end is closed
+if (isscalar(endType) && endType == 0) || ...
+    (ischar(endType) && strcmp( endType, 'closed' )) % end is closed
   Y(nOth,nOth,:) = Ypnm1 + MC./MA;
 else
-  if isscalar(endType)
+  if isscalar(endType) || ischar(endType)
     switch endType
-      case 1
-        if b == 0
-          ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'dalmont', [], RH, CO2); % self-radiation
-        else
-          ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'thickpipe', b, RH, CO2 ); % L&S unflanged approximation
-        end
-      case 2
-        ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'flanged', [], RH, CO2); % self-radiation
-      case 3
+      case {1, 'unflanged-silva-noncausal'}
+        ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'unflanged-silva-noncausal', [], RH, CO2 );
+      case {2, 'flanged-silva-noncausal'}
+        ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'flanged-silva-noncausal', [], RH, CO2 );
+      case {3, 'ideally-open'}
         ZB(nOpen,nOpen,:) = zeros(size(k));
+      case {'thickpipe'}
+        ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, 'thickpipe', b, RH, CO2 );
+      otherwise
+        ZB(nOpen,nOpen,:) = radiation( ra(end), f, T, endType, [], RH, CO2 );
     end
   else
     ZB(nOpen, nOpen, :) = endType;
